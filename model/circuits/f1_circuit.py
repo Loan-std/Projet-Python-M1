@@ -1,6 +1,8 @@
 from model.circuits.circuit_template import CircuitTemplate
 from model.road_tile import RoadTile
 from model.grass_tile import GrassTile
+from model.dirt_tile import DirtTile
+from model.void_tile import VoidTile
 
 
 class F1Circuit(CircuitTemplate):
@@ -15,10 +17,12 @@ class F1Circuit(CircuitTemplate):
     à la méthode create() héritée de CircuitTemplate.
     """
 
+    START_POSITIONS = ((7, 1), (8, 1))
+    CHECKPOINT_POSITIONS = ((7, 20),)
     @property
     def layout(self):
         return [
-        "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+        "GDVGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
         "GGGGRRRRRRRRRRRRRRRRRRRRRRRRGGGG",
         "GGGRRRRRRRRRRRRRRRRRRRRRRRRRRGGG",
         "GGGRRRRRRRRRRRRRRRRRRRRRRRRRRGGG",
@@ -48,5 +52,11 @@ class F1Circuit(CircuitTemplate):
 
         if character == "R":
             return RoadTile(col, row)
+
+        if character == "D":
+            return DirtTile(col, row)
+
+        if character == "V":
+            return VoidTile(col, row)
 
         return GrassTile(col, row)

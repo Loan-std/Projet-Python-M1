@@ -1,9 +1,10 @@
-from constants import GameState, GRID_ROWS, GRID_COLS
+from constants import GameState, GRID_ROWS, GRID_COLS, TILE_SIZE
 from model.car import Car
 from model.circuit import Circuit
-
 from model.circuits.f1_circuit import F1Circuit
 from model.circuits.snow_circuit import SnowCircuit
+
+from model.void_tile import VoidTile
 
 
 class GameModel:
@@ -19,19 +20,34 @@ class GameModel:
     def load_circuit(self, circuit_id: int) -> None:
 
         if circuit_id == 0:
-            grid = F1Circuit().create()
+            template = F1Circuit()
 
         elif circuit_id == 1:
-            grid = SnowCircuit().create()
+            template = SnowCircuit()
+        else:
+            raise ValueError(f"Unknown circuit ID: {circuit_id}")
 
-        self.circuit = Circuit(grid)
-        self.spawn_car()
+        self.circuit = Circuit(template.create())
+        self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
+        self.spawn_car(template.START_POSITIONS[0])
 
-    def spawn_car(self) -> None:
-        self.car = Car(7, 1)
+    def spawn_car(self, start_position: tuple[int, int]) -> None:
+        col, row = start_position
+        self.car = Car(col, row)
+        self.start_pixel = (self.car.x, self.car.y)
 
     def update(self) -> None:
         """Mets à jour les objets dans l'écran."""
         if self.state != GameState.RACING or self.circuit is None:
             return
         self.car.update_position()
+
+        tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
+        if tile is None or isinstance(tile, VoidTile):
+            self.car.x, self.car.y = self.respawn_pixel
+            self.car.speed = 0.0
+        elif (tile.col, tile.row) in self.checkpoint_positions:
+            self.respawn_pixel = (
+                tile.col * TILE_SIZE + TILE_SIZE // 2,
+                tile.row * TILE_SIZE + TILE_SIZE // 2,
+            )  

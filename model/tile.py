@@ -14,6 +14,7 @@ class Tile(ABC):
     """
 
     COLOR = (0, 0, 0)
+    TRACTION = 1.0
 
     def __init__(self, col: int, row: int):
         self.col = col

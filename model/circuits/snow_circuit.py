@@ -16,6 +16,7 @@ class SnowCircuit(CircuitTemplate):
     à la méthode create() héritée de CircuitTemplate.
     """
 
+    START_POSITIONS = ((7, 1), (8, 1))
     @property
     def layout(self):
         return [
