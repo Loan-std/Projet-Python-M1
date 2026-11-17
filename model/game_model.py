@@ -29,6 +29,7 @@ class GameModel:
 
         self.circuit = Circuit(template.create())
         self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
+        self.visited_checkpoints: set[tuple[int, int]] = set()
         self.spawn_car(template.START_POSITIONS[0])
 
     def spawn_car(self, start_position: tuple[int, int]) -> None:
@@ -47,6 +48,7 @@ class GameModel:
             self.car.x, self.car.y = self.respawn_pixel
             self.car.speed = 0.0
         elif (tile.col, tile.row) in self.checkpoint_positions:
+            self.visited_checkpoints.add((tile.col, tile.row))
             self.respawn_pixel = (
                 tile.col * TILE_SIZE + TILE_SIZE // 2,
                 tile.row * TILE_SIZE + TILE_SIZE // 2,
