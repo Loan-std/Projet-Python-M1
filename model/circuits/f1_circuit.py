@@ -12,6 +12,8 @@ class F1Circuit(CircuitTemplate):
     Légende :
         R = Route
         G = Herbe
+        D = Terre
+        V = Vide
 
     Le layout est automatiquement transformé en grille grâce
     à la méthode create() héritée de CircuitTemplate.
@@ -19,6 +21,9 @@ class F1Circuit(CircuitTemplate):
 
     START_POSITIONS = ((7, 1), (8, 1))
     CHECKPOINT_POSITIONS = ((7, 20),)
+    FINISH_POSITION = (7, 2)
+    REQUIRED_LAPS = 3
+    
     @property
     def layout(self):
         return [

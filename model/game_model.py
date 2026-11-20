@@ -30,6 +30,10 @@ class GameModel:
         self.circuit = Circuit(template.create())
         self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
         self.visited_checkpoints: set[tuple[int, int]] = set()
+        self.finish_position = getattr(template, "FINISH_POSITION", None)
+        self.required_laps = getattr(template, "REQUIRED_LAPS", 3)
+        self.completed_laps = 0
+        self.was_on_finish = False
         self.spawn_car(template.START_POSITIONS[0])
 
     def spawn_car(self, start_position: tuple[int, int]) -> None:
@@ -47,9 +51,23 @@ class GameModel:
         if tile is None or isinstance(tile, VoidTile):
             self.car.x, self.car.y = self.respawn_pixel
             self.car.speed = 0.0
+            
         elif (tile.col, tile.row) in self.checkpoint_positions:
             self.visited_checkpoints.add((tile.col, tile.row))
             self.respawn_pixel = (
                 tile.col * TILE_SIZE + TILE_SIZE // 2,
                 tile.row * TILE_SIZE + TILE_SIZE // 2,
             )  
+
+        current_tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
+        on_finish = (
+            current_tile is not None
+            and (current_tile.col, current_tile.row) == self.finish_position
+        )
+
+        if on_finish and not self.was_on_finish:
+            if set(self.checkpoint_positions).issubset(self.visited_checkpoints):
+                self.completed_laps += 1
+                self.visited_checkpoints.clear()
+
+        self.was_on_finish = on_finish
