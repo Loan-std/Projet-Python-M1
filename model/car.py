@@ -15,6 +15,7 @@ class Car(ABC):
     ACCELERATION = 0.2
     BRAKING = 0.3
     ROTATION = 3
+    GRIP = 0.3
 
     def __init__(self, start_col, start_row):
 
@@ -30,32 +31,49 @@ class Car(ABC):
         """
         radians = math.radians(self.angle)
 
-        self.vx += math.sin(radians) * self.ACCELERATION
-        self.vy -= math.cos(radians) * self.ACCELERATION
+        self.vx -= math.sin(radians) * self.ACCELERATION
+        self.vy += math.cos(radians) * self.ACCELERATION
 
     def brake(self) -> None:
         radians = math.radians(self.angle)
         
-        self.vx -= math.sin(radians) * self.BRAKING
-        self.vy += math.cos(radians) * self.BRAKING
+        self.vx += math.sin(radians) * self.BRAKING
+        self.vy -= math.cos(radians) * self.BRAKING
 
     def turn_right(self) -> None :
         """Calcul la vitesse réelle de la voiture pour pouvoir tourner lorsque la voiture est en marche.
         """
         speed = math.hypot(self.vx, self.vy)
 
-        if speed > 0.4:
-            self.angle += self.ROTATION
+        if speed > 0.2:
+            rotation = (self.ROTATION*(speed / (speed + 2))/(1 + speed * 0.05))
+            self.angle += rotation
+            
 
     def turn_left(self) -> None :
         speed = math.hypot(self.vx, self.vy)
 
         if speed > 0.2:
-            self.angle -= self.ROTATION
+            rotation = (self.ROTATION*(speed / (speed + 2))/(1 + speed * 0.05))
+            self.angle -= rotation
+
+    def apply_grip(self) -> None:
+        """Réduit la vitesse latérale pour limiter le dérapage."""
+
+        radians = math.radians(self.angle)
+
+        right_x = math.cos(radians)
+        right_y = math.sin(radians)
+
+        lateral_speed = self.vx * right_x + self.vy * right_y
+
+        self.vx -= lateral_speed * right_x * self.GRIP
+        self.vy -= lateral_speed * right_y * self.GRIP
 
     def update_position(self) -> None:
         """Mets à jour la position de la voiture en prenant en compte le frottement de l'air.
         """
+        self.apply_grip()
 
         self.vx *= AIR_FRICTION
         self.vy *= AIR_FRICTION
