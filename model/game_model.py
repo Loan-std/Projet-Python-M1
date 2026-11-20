@@ -33,6 +33,7 @@ class GameModel:
         self.finish_position = getattr(template, "FINISH_POSITION", None)
         self.required_laps = getattr(template, "REQUIRED_LAPS", 3)
         self.completed_laps = 0
+        self.race_finished = False
         self.was_on_finish = False
         self.spawn_car(template.START_POSITIONS[0])
 
@@ -45,13 +46,15 @@ class GameModel:
         """Mets à jour les objets dans l'écran."""
         if self.state != GameState.RACING or self.circuit is None:
             return
+        if self.race_finished:
+            return
         self.car.update_position()
 
         tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
         if tile is None or isinstance(tile, VoidTile):
             self.car.x, self.car.y = self.respawn_pixel
             self.car.speed = 0.0
-            
+
         elif (tile.col, tile.row) in self.checkpoint_positions:
             self.visited_checkpoints.add((tile.col, tile.row))
             self.respawn_pixel = (
@@ -69,5 +72,9 @@ class GameModel:
             if set(self.checkpoint_positions).issubset(self.visited_checkpoints):
                 self.completed_laps += 1
                 self.visited_checkpoints.clear()
+
+                if self.completed_laps >= self.required_laps:
+                    self.race_finished = True
+                    self.car.speed = 0.0
 
         self.was_on_finish = on_finish

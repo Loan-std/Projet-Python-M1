@@ -65,6 +65,24 @@ class GameView:
             return
         surf, rect = model.car.get_rotated_sprite()
         self.screen.blit(surf, rect)
+        
+        lap_text = self.font.render(
+            f"Tours termines : {model.completed_laps}/{model.required_laps}",
+            True,
+            COLOR_TEXT,
+        )
+        self.screen.blit(lap_text, (10, 10))
+
+        if model.race_finished:
+            finish_text = self.font.render(
+                "Course terminee !",
+                True,
+                COLOR_ACCENT,
+            )
+            finish_rect = finish_text.get_rect(
+                center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+            )
+            self.screen.blit(finish_text, finish_rect)
 
 
     def _draw_circuit_select(self, model: GameModel) -> None:

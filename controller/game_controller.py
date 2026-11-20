@@ -86,6 +86,9 @@ class GameController:
 
         if self.model.state != GameState.RACING:
             return
+        
+        if self.model.race_finished:
+            return
 
         p1_input = self.input_handler.get_inputs()
         car = self.model.car
