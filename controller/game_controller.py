@@ -103,10 +103,13 @@ class GameController:
             car.accelerate()
         if player_input['braking']:
             car.brake()
-        if player_input['turn_right']:
-            car.turn_right()
+        
         if player_input['turn_left']:
             car.turn_left()
+        elif player_input['turn_right']:
+            car.turn_right()
+        else:
+            car.reset_steering()
 
     def render(self) -> None:
         """Dessine le rendu graphique à l'écran."""
