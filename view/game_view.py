@@ -78,10 +78,49 @@ class GameView:
                 boost_text,
                 boost_text.get_rect(center=boost_rect.center),
             )
-        
+
+        # Affiche la ligne d'arrivée sur la case prévue par le circuit.
+        if model.finish_position is not None:
+            col, row = model.finish_position
+            finish_tile_rect = pygame.Rect(
+                col * TILE_SIZE,
+                row * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+            )
+            pygame.draw.rect(
+                self.screen, COLOR_TEXT, finish_tile_rect, 2
+            )
+            finish_label = self.font.render("L", True, COLOR_TEXT)
+            self.screen.blit(
+                finish_label,
+                finish_label.get_rect(center=finish_tile_rect.center),
+            )
+
         # Dessine la voiture
         surf, rect = model.car.get_rotated_sprite()
         self.screen.blit(surf, rect)
+
+        # Affiche les points de passage par-dessus les terrains.
+        for col, row in model.checkpoint_positions:
+            checkpoint_rect = pygame.Rect(
+                col * TILE_SIZE,
+                row * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+            )
+
+            color = (0, 220, 255)
+            if (col, row) in model.visited_checkpoints:
+                color = (80, 255, 80)
+
+            pygame.draw.rect(self.screen, color, checkpoint_rect, 2)
+
+            checkpoint_text = self.font.render("C", True, color)
+            self.screen.blit(
+                checkpoint_text,
+                checkpoint_text.get_rect(center=checkpoint_rect.center),
+            )
 
         # Affiche le nombre de tours terminés
         lap_text = self.font.render(
@@ -89,7 +128,7 @@ class GameView:
             True,
             COLOR_TEXT,
         )
-        
+
         lap_rect = lap_text.get_rect(topleft=(10, 10))
         pygame.draw.rect(
             self.screen,
