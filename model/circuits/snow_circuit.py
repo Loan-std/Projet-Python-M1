@@ -20,7 +20,8 @@ class SnowCircuit(CircuitTemplate):
     CHECKPOINT_POSITIONS = ((7, 18),)
     FINISH_POSITION = (7, 1)
     REQUIRED_LAPS = 3
-    
+    BOOST_POSITIONS = ((15, 1),)
+
     @property
     def layout(self):
         return [

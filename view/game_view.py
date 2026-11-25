@@ -54,6 +54,8 @@ class GameView:
             model (GameModel): class du dossier 'model'
         """
 
+        if model.circuit is None:
+            return
         # Dessine le circuit
         for row_idx, row in enumerate(model.circuit.grid):
             for col_idx, tile in enumerate(row):
@@ -61,17 +63,40 @@ class GameView:
                 self.screen.blit(
                     sprite, (col_idx * TILE_SIZE, row_idx * TILE_SIZE))
 
-        if model.circuit is None:
-            return
+        # Dessine les blocs de boost sur le circuit
+        for col, row in model.boost_positions:
+            boost_rect = pygame.Rect(
+                col * TILE_SIZE,
+                row * TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+            )
+            pygame.draw.rect(self.screen, COLOR_ACCENT, boost_rect, 2)
+
+            boost_text = self.font.render("B", True, COLOR_ACCENT)
+            self.screen.blit(
+                boost_text,
+                boost_text.get_rect(center=boost_rect.center),
+            )
+        
+        # Dessine la voiture
         surf, rect = model.car.get_rotated_sprite()
         self.screen.blit(surf, rect)
-        
+
+        # Affiche le nombre de tours terminés
         lap_text = self.font.render(
             f"Tours termines : {model.completed_laps}/{model.required_laps}",
             True,
             COLOR_TEXT,
         )
-        self.screen.blit(lap_text, (10, 10))
+        
+        lap_rect = lap_text.get_rect(topleft=(10, 10))
+        pygame.draw.rect(
+            self.screen,
+            COLOR_BG,
+            lap_rect.inflate(12, 8),
+        )
+        self.screen.blit(lap_text, lap_rect)
 
         if model.race_finished:
             finish_text = self.font.render(

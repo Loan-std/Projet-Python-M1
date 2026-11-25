@@ -29,6 +29,7 @@ class GameModel:
 
         self.circuit = Circuit(template.create())
         self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
+        self.boost_positions = getattr(template, "BOOST_POSITIONS", ())
         self.visited_checkpoints: set[tuple[int, int]] = set()
         self.finish_position = getattr(template, "FINISH_POSITION", None)
         self.required_laps = getattr(template, "REQUIRED_LAPS", 3)
@@ -63,11 +64,14 @@ class GameModel:
             )  
 
         current_tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
+        if current_tile is not None:
+            if (current_tile.col, current_tile.row) in self.boost_positions:
+                self.car.accelerate()
         on_finish = (
             current_tile is not None
             and (current_tile.col, current_tile.row) == self.finish_position
         )
-
+        
         if on_finish and not self.was_on_finish:
             if set(self.checkpoint_positions).issubset(self.visited_checkpoints):
                 self.completed_laps += 1

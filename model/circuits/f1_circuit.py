@@ -23,7 +23,8 @@ class F1Circuit(CircuitTemplate):
     CHECKPOINT_POSITIONS = ((7, 20),)
     FINISH_POSITION = (7, 2)
     REQUIRED_LAPS = 3
-    
+    BOOST_POSITIONS = ((15, 2),)
+
     @property
     def layout(self):
         return [
