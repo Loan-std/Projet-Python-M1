@@ -1,5 +1,5 @@
 from constants import GameState, GRID_ROWS, GRID_COLS, TILE_SIZE
-from model.car import Car
+from model.f1_car import FormulaCar
 from model.circuit import Circuit
 from model.circuits.f1_circuit import F1Circuit
 from model.circuits.snow_circuit import SnowCircuit
@@ -8,12 +8,13 @@ from model.void_tile import VoidTile
 
 
 class GameModel:
-    """Gère le rendu du jeu à l'écran."""
+    """Gère le rendu du jeu à l'écran.
+    """
 
     def __init__(self):
         self.state: str = GameState.MENU
         self.circuit: Circuit | None = None
-        self.car: Car | None = None
+        self.car: FormulaCar | None = None
         self.selected_circuit = 0
         self.available_circuits = ["Formule 1", "Hivernale"]
 
@@ -40,11 +41,12 @@ class GameModel:
 
     def spawn_car(self, start_position: tuple[int, int]) -> None:
         col, row = start_position
-        self.car = Car(col, row)
-        self.start_pixel = (self.car.x, self.car.y)
+        self.car = FormulaCar(col, row)
+        self.respawn_pixel = (self.car.x, self.car.y)
 
     def update(self) -> None:
-        """Mets à jour les objets dans l'écran."""
+        """Mets à jour les objets dans l'écran.
+        """
         if self.state != GameState.RACING or self.circuit is None:
             return
         if self.race_finished:
@@ -54,7 +56,10 @@ class GameModel:
         tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
         if tile is None or isinstance(tile, VoidTile):
             self.car.x, self.car.y = self.respawn_pixel
-            self.car.speed = 0.0
+            self.car.vx = 0.0
+            self.car.vy = 0.0
+            self.car.drifting = False
+            self.car.reset_steering()
 
         elif (tile.col, tile.row) in self.checkpoint_positions:
             self.visited_checkpoints.add((tile.col, tile.row))
@@ -79,6 +84,7 @@ class GameModel:
 
                 if self.completed_laps >= self.required_laps:
                     self.race_finished = True
-                    self.car.speed = 0.0
+                    self.car.vx = 0.0
+                    self.car.vy = 0.0
 
         self.was_on_finish = on_finish
