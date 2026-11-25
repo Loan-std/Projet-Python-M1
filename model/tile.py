@@ -15,6 +15,9 @@ class Tile(ABC):
 
     COLOR = (0, 0, 0)
     TRACTION = 1.0
+    DRIFT_SPEED = 10
+    SPEED_MULTIPLIER = 1.0
+    STEERING = 1
 
     def __init__(self, col: int, row: int):
         self.col = col

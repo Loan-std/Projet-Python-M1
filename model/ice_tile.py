@@ -7,7 +7,9 @@ class IceTile(Tile):
 
     COLOR = (120, 200, 255)
     BORDER_COLOR = (100, 180, 235)
-    TRACTION = 0.3
+    TRACTION = 0.005
+    DRIFT_SPEED = 1
+
 
     def get_sprite(self, tile_size: int = TILE_SIZE) -> pygame.Surface:
 

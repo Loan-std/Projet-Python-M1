@@ -12,12 +12,10 @@ class Car(ABC):
     """Décrit le comportement d'une voiture. Pour pouvoir gérer le dérapage, on sépare la vitesse sur x et y.
     """
 
-    ACCELERATION = 0.07
-    BRAKING = 0.3
+    ACCELERATION = 0.2
+    BRAKING = 0.1
     ROTATION = 3
-    GRIP = 0.1
     DRIFT_DELAY = 30
-    DRIFT_ON_SPEED = 7
 
     def __init__(self, start_col, start_row):
 
@@ -29,6 +27,10 @@ class Car(ABC):
         self.drifting = False
         self.left_steer_time = 0
         self.right_steer_time = 0
+        self.current_grip = 1
+        self.current_drift_speed = 10
+        self.current_steering = 1
+        self.current_speed_multiplier = 1
         self.sprite = self.build_sprite()
 
     def accelerate(self) -> None:
@@ -36,14 +38,15 @@ class Car(ABC):
         """
         radians = math.radians(self.angle)
 
-        self.vx -= math.sin(radians) * self.ACCELERATION
-        self.vy += math.cos(radians) * self.ACCELERATION
+        self.vx += math.sin(radians) * self.ACCELERATION
+        self.vy -= math.cos(radians) * self.ACCELERATION
 
     def brake(self) -> None:
         radians = math.radians(self.angle)
-        
-        self.vx += math.sin(radians) * self.BRAKING
-        self.vy -= math.cos(radians) * self.BRAKING
+        braking = self.BRAKING * max(0.3, self.current_grip)
+
+        self.vx -= math.sin(radians) * braking
+        self.vy += math.cos(radians) * braking
 
     def turn_right(self) -> None :
         """Calcul la vitesse réelle de la voiture pour pouvoir tourner lorsque la voiture est en marche.
@@ -57,21 +60,17 @@ class Car(ABC):
         self.left_steer_time = 0
         self.right_steer_time += 1
 
-        rotation = (self.ROTATION * (speed / (speed + 1)) / (1 + speed * 0.05))
+        rotation = (
+            self.ROTATION
+            * self.current_steering
+            * (speed / (speed + 1))
+            / (1 + speed * 0.05)
+        )
 
         self.angle += rotation
 
-        if (speed > self.DRIFT_ON_SPEED and self.right_steer_time >= self.DRIFT_DELAY and not self.drifting):
-
+        if (speed > self.current_drift_speed and self.right_steer_time >= self.DRIFT_DELAY and not self.drifting):
             self.drifting = True
-
-            radians = math.radians(self.angle)
-            side_x = math.cos(radians)
-            side_y = math.sin(radians)
-
-            drift_kick = speed * 0.2
-            self.vx += side_x * drift_kick
-            self.vy += side_y * drift_kick
             
 
     def turn_left(self) -> None:
@@ -84,21 +83,23 @@ class Car(ABC):
         self.left_steer_time += 1
         self.right_steer_time = 0
 
-        rotation = (self.ROTATION * (speed / (speed + 1)) / (1 + speed * 0.05))
-
+        rotation = (
+            self.ROTATION
+            * self.current_steering
+            * (speed / (speed + 1))
+            / (1 + speed * 0.05)
+        )
         self.angle -= rotation
 
-        if (speed > self.DRIFT_ON_SPEED and self.left_steer_time >= self.DRIFT_DELAY and not self.drifting):
-
+        if (speed > self.current_drift_speed and self.left_steer_time >= self.DRIFT_DELAY and not self.drifting):
             self.drifting = True
 
-            radians = math.radians(self.angle)
-            side_x = math.cos(radians)
-            side_y = math.sin(radians)
+    def update_surface(self, tile):
 
-            drift_kick = speed * 0.2
-            self.vx -= side_x * drift_kick
-            self.vy -= side_y * drift_kick
+        self.current_grip = tile.TRACTION
+        self.current_drift_speed = tile.DRIFT_SPEED
+        self.current_speed_multiplier = tile.SPEED_MULTIPLIER
+        self.current_steering = tile.STEERING
 
     def reset_steering(self):
 
@@ -106,34 +107,58 @@ class Car(ABC):
         self.right_steer_time = 0
 
     def apply_grip(self) -> None:
-        """Réduit la vitesse latérale pour limiter le dérapage."""
-        grip = self.GRIP
-
-        # pneus décrochent
-        if self.drifting:
-            grip *= 0.05
 
         radians = math.radians(self.angle)
+
+        forward_x = -math.sin(radians)
+        forward_y = math.cos(radians)
+
         right_x = math.cos(radians)
         right_y = math.sin(radians)
 
-        lateral_speed = self.vx * right_x + self.vy * right_y
-        self.vx -= lateral_speed * right_x * grip
-        self.vy -= lateral_speed * right_y * grip
+        # vitesse dans l'axe de la voiture
+        forward_speed = (
+            self.vx * forward_x +
+            self.vy * forward_y
+        )
+
+        # vitesse latérale
+        lateral_speed = (
+            self.vx * right_x +
+            self.vy * right_y
+        )
+
+        grip = self.current_grip
+
+        if self.drifting:
+            grip *= 0.1
+
+        lateral_speed *= (1 - grip)
+
+        self.vx = (
+            forward_x * forward_speed +
+            right_x * lateral_speed
+        )
+
+        self.vy = (
+            forward_y * forward_speed +
+            right_y * lateral_speed
+        )
 
     def update_position(self) -> None:
         """Mets à jour la position de la voiture en prenant en compte le frottement de l'air.
         """
         self.apply_grip()
 
-        self.vx *= AIR_FRICTION
-        self.vy *= AIR_FRICTION
+        self.vx *= AIR_FRICTION * self.current_speed_multiplier
+        self.vy *= AIR_FRICTION * self.current_speed_multiplier
 
         self.x += self.vx
         self.y += self.vy
 
         speed = math.hypot(self.vx, self.vy)
-        if speed < 1:
+
+        if speed < self.current_drift_speed * 0.5:
             self.drifting = False
             self.reset_steering()
 
