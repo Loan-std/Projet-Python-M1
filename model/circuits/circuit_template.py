@@ -17,15 +17,12 @@ class CircuitTemplate(ABC):
         pass
 
     def create(self):
-
         grid = []
 
         for row_idx, row in enumerate(self.layout):
-
             current_row = []
 
             for col_idx, cell in enumerate(row):
-
                 current_row.append(
                     self.get_tile(
                         cell,
