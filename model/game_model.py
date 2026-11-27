@@ -32,13 +32,18 @@ class GameModel:
 
         self.circuit = Circuit(template.create())
         self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
+        self.checkpoint_angles = getattr(template, "CHECKPOINT_ANGLES", {})
         self.boost_positions = getattr(template, "BOOST_POSITIONS", ())
-        self.visited_checkpoints: set[tuple[int, int]] = set()
+        self.checkpoint_lines = template.CHECKPOINT_LINES
+        self.checkpoint_line_angles = template.CHECKPOINT_LINE_ANGLES
+        self.visited_checkpoints: set[int] = set()
         self.finish_position = getattr(template, "FINISH_POSITION", None)
+        self.finish_line = template.FINISH_LINE
         self.required_laps = getattr(template, "REQUIRED_LAPS", 3)
         self.completed_laps = 0
         self.race_finished = False
         self.was_on_finish = False
+        self.start_angle = getattr(template, "START_ANGLE", 0.0)
         self.spawn_car(template.START_POSITIONS[0], template.START_POSITIONS[1])
 
     def spawn_car(self, start_position_p1: tuple[int, int], start_position_p2: tuple[int, int]) -> None:
@@ -46,8 +51,20 @@ class GameModel:
         col_p2, row_p2 = start_position_p2
         self.car_p1 = FormulaCar(col_p1, row_p1)
         self.car_p2 = Kart(col_p2, row_p2)
-        self.respawn_p1 = (self.car_p1.x, self.car_p1.y)
-        self.respawn_p2 = (self.car_p2.x, self.car_p2.y)
+        self.car_p1.angle = self.start_angle
+        self.car_p2.angle = self.start_angle
+
+        self.respawn_p1 = (
+            self.car_p1.x,
+            self.car_p1.y,
+            self.start_angle
+        )
+
+        self.respawn_p2 = (
+            self.car_p2.x,
+            self.car_p2.y,
+            self.start_angle
+        )
 
     def update(self) -> None:
         """Met à jour les objets du jeu."""
@@ -83,10 +100,11 @@ class GameModel:
 
             # Hors piste
             if current_tile is None or isinstance(current_tile, VoidTile):
-
-                respawn_x, respawn_y = getattr(self,respawn_attr)
+                respawn_x, respawn_y, respawn_angle = getattr(self, respawn_attr)
+                
                 car.x = respawn_x
                 car.y = respawn_y
+                car.angle = respawn_angle
                 car.vx = 0.0
                 car.vy = 0.0
                 car.drifting = False
@@ -95,13 +113,13 @@ class GameModel:
                 continue
 
             # Checkpoint
-            if (current_tile.col, current_tile.row) in self.checkpoint_positions:
+            position = (current_tile.col, current_tile.row)
 
-                self.visited_checkpoints.add(
-                    (current_tile.col, current_tile.row)
-                )
-
-                setattr(self, respawn_attr,(current_tile.col * TILE_SIZE + TILE_SIZE // 2, current_tile.row * TILE_SIZE + TILE_SIZE // 2))
+            for checkpoint_id, line in enumerate(self.checkpoint_lines):
+                if position in line:
+                    self.visited_checkpoints.add(checkpoint_id)
+                    col, row = line[len(line) // 2]
+                    setattr(self, respawn_attr,(col * TILE_SIZE + TILE_SIZE // 2, row * TILE_SIZE + TILE_SIZE // 2, self.checkpoint_line_angles[checkpoint_id]))
 
             # Boost
             if (current_tile.col, current_tile.row) in self.boost_positions:
@@ -120,16 +138,12 @@ class GameModel:
             return
 
         on_finish = (
-            (current_tile.col, current_tile.row)
-            == self.finish_position
+            (current_tile.col, current_tile.row) in self.finish_line
         )
 
         if on_finish and not self.was_on_finish:
 
-            if set(self.checkpoint_positions).issubset(
-                self.visited_checkpoints
-            ):
-
+            if len(self.visited_checkpoints) == len(self.checkpoint_lines):
                 self.completed_laps += 1
                 self.visited_checkpoints.clear()
 

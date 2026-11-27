@@ -32,12 +32,14 @@ class Tile(ABC):
         surface = pygame.Surface((tile_size, tile_size))
         surface.fill(self.COLOR)
 
-        pygame.draw.rect(
-            surface,
-            self.BORDER_COLOR,
-            surface.get_rect(),
-            2
+        surface = pygame.Surface((tile_size, tile_size))
+        surface.fill(self.COLOR)
+        line_color = tuple(min(255, value + 10) for value in self.COLOR)
+        pygame.draw.line(
+            surface, line_color, (0, 0), (tile_size - 1, 0), 1
         )
-
+        pygame.draw.line(
+            surface, line_color, (0, 0), (0, tile_size - 1), 1
+        )
         self.sprite = surface
         return self.sprite

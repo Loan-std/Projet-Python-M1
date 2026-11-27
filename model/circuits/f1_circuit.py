@@ -3,6 +3,7 @@ from model.road_tile import RoadTile
 from model.grass_tile import GrassTile
 from model.dirt_tile import DirtTile
 from model.void_tile import VoidTile
+from model.ice_tile import IceTile
 
 
 class F1Circuit(CircuitTemplate):
@@ -19,45 +20,62 @@ class F1Circuit(CircuitTemplate):
     à la méthode create() héritée de CircuitTemplate.
     """
 
-    START_POSITIONS = ((7, 1), (8, 1))
+    START_POSITIONS = ((7, 2), (7, 4))
+    START_ANGLE = 90.0
     CHECKPOINT_POSITIONS = ((7, 20),)
+    CHECKPOINT_ANGLES = {(7, 20): -90.0}
     FINISH_POSITION = (7, 2)
+    FINISH_LINE = tuple((9, row) for row in range(1, 6))
+    CHECKPOINT_LINES = (
+        tuple((col, 12) for col in range(26, 31)),
+        tuple((col, 16) for col in range(10, 15)),
+    )
+    CHECKPOINT_LINE_ANGLES = (180.0, 180.0)
     REQUIRED_LAPS = 3
     BOOST_POSITIONS = ((15, 2),)
 
     @property
     def layout(self):
         return [
-        "GDVGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
-        "GGGGRRRRRRRRRRRRRRRRRRRRRRRRGGGG",
-        "GGGRRRRRRRRRRRRRRRRRRRRRRRRRRGGG",
-        "GGGRRRRRRRRRRRRRRRRRRRRRRRRRRGGG",
-        "GGGRRRRGGGGGGGGGGGGGGGGGGRRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRGGGGGGGGGGGGGGGGGGGGRRRGGG",
-        "GGGRRRRGGGGGGGGGGGGGGGGGGRRRRGGG",
-        "GGGRRRRRRRRRRRRRRRRRRRRRRRRRRGGG",
-        "GGGRRRRRRRRRRRRRRRRRRRRRRRRRRGGG",
-        "GGGGRRRRRRRRRRRRRRRRRRRRRRRGGGGG",
-        "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
-        "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
-    ]
+            "GDVGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+            "GRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRG",
+            "GRRRRRGGGGGGGGGGGGGGGGGGGGRRRRRG",
+            "GRRRRRGGGGGGGGGGGGGGGGGGGGRRRRRG",
+            "GRRRRRGGGGGGGGGGGGGGGGGGGGRRRRRG",
+            "GRRRRRGGGGRRRRRRRRRRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRRRRRRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRRRRRRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRRRRRRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRRRRRRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRGGGGRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRGGGGRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRGGGGRRRRRGGRRRRRG",
+            "GRRRRRGGGGRRRRRGGGGRRRRRGGRRRRRG",
+            "GRRRRRRRRRRRRRRGGGGRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRGGGGRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRGGGGRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRGGGGRRRRRRRRRRRRG",
+            "GRRRRRRRRRRRRRRGGGGRRRRRRRRRRRRG",
+            "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+        ]
 
     def get_tile(self, character, col, row):
 
         if character == "R":
+            if 1 <= row <= 5 and 10 <= col <= 23:
+                return DirtTile(col, row)
+
+            if 8 <= row <= 15 and 26 <= col <= 30:
+                return IceTile(col, row)
+
             return RoadTile(col, row)
+
+        if character == "I":
+            return IceTile(col, row)
 
         if character == "D":
             return DirtTile(col, row)

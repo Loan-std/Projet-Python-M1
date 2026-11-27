@@ -79,23 +79,40 @@ class GameView:
                 boost_text.get_rect(center=boost_rect.center),
             )
 
-        # Affiche la ligne d'arrivée sur la case prévue par le circuit.
-        if model.finish_position is not None:
-            col, row = model.finish_position
-            finish_tile_rect = pygame.Rect(
-                col * TILE_SIZE,
-                row * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-            )
-            pygame.draw.rect(
-                self.screen, COLOR_TEXT, finish_tile_rect, 2
-            )
-            finish_label = self.font.render("L", True, COLOR_TEXT)
-            self.screen.blit(
-                finish_label,
-                finish_label.get_rect(center=finish_tile_rect.center),
-            )
+       # Dessine le damier sur toute la ligne de départ et d'arrivée.
+        for col, row in model.finish_line:
+            for square_row in range(2):
+                for square_col in range(2):
+                    color = (245, 245, 245)
+                    if (square_row + square_col) % 2 == 0:
+                        color = (20, 20, 20)
+
+                    left = col * TILE_SIZE + square_col * TILE_SIZE // 2
+                    top = row * TILE_SIZE + square_row * TILE_SIZE // 2
+                    right = col * TILE_SIZE + (square_col + 1) * TILE_SIZE // 2
+                    bottom = row * TILE_SIZE + (square_row + 1) * TILE_SIZE // 2
+
+                    pygame.draw.rect(
+                        self.screen,
+                        color,
+                        (left, top, right - left, bottom - top),
+                    )
+
+        # Affiche les points de passage par-dessus les terrains.
+        for checkpoint_id, line in enumerate(model.checkpoint_lines):
+            color = (0, 220, 255)
+            if checkpoint_id in model.visited_checkpoints:
+                color = (80, 255, 80)
+
+            for col, row in line:
+                # Relie les bandes pour couvrir toute la largeur de la piste.
+                checkpoint_rect = pygame.Rect(
+                    col * TILE_SIZE,
+                    row * TILE_SIZE + TILE_SIZE // 2 - 3,
+                    TILE_SIZE,
+                    6,
+                )
+                pygame.draw.rect(self.screen, color, checkpoint_rect)
 
         # Dessine la voiture
         for car in (model.car_p1, model.car_p2):
@@ -105,27 +122,6 @@ class GameView:
 
             surf, rect = car.get_rotated_sprite()
             self.screen.blit(surf, rect)
-
-        # Affiche les points de passage par-dessus les terrains.
-        for col, row in model.checkpoint_positions:
-            checkpoint_rect = pygame.Rect(
-                col * TILE_SIZE,
-                row * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE,
-            )
-
-            color = (0, 220, 255)
-            if (col, row) in model.visited_checkpoints:
-                color = (80, 255, 80)
-
-            pygame.draw.rect(self.screen, color, checkpoint_rect, 2)
-
-            checkpoint_text = self.font.render("C", True, color)
-            self.screen.blit(
-                checkpoint_text,
-                checkpoint_text.get_rect(center=checkpoint_rect.center),
-            )
 
         # Affiche le nombre de tours terminés
         lap_text = self.font.render(
