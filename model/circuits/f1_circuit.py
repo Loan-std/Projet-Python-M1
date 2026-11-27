@@ -25,6 +25,12 @@ class F1Circuit(CircuitTemplate):
     CHECKPOINT_POSITIONS = ((7, 20),)
     CHECKPOINT_ANGLES = {(7, 20): -90.0}
     FINISH_POSITION = (7, 2)
+    FINISH_LINE = tuple((9, row) for row in range(1, 6))
+    CHECKPOINT_LINES = (
+        tuple((col, 12) for col in range(26, 31)),
+        tuple((col, 16) for col in range(10, 15)),
+    )
+    CHECKPOINT_LINE_ANGLES = (180.0, 180.0)
     REQUIRED_LAPS = 3
     BOOST_POSITIONS = ((15, 2),)
 

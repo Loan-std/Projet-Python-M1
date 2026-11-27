@@ -33,8 +33,11 @@ class GameModel:
         self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
         self.checkpoint_angles = getattr(template, "CHECKPOINT_ANGLES", {})
         self.boost_positions = getattr(template, "BOOST_POSITIONS", ())
-        self.visited_checkpoints: set[tuple[int, int]] = set()
+        self.checkpoint_lines = template.CHECKPOINT_LINES
+        self.checkpoint_line_angles = template.CHECKPOINT_LINE_ANGLES
+        self.visited_checkpoints: set[int] = set()
         self.finish_position = getattr(template, "FINISH_POSITION", None)
+        self.finish_line = template.FINISH_LINE
         self.required_laps = getattr(template, "REQUIRED_LAPS", 3)
         self.completed_laps = 0
         self.race_finished = False
@@ -87,20 +90,17 @@ class GameModel:
             return
 
         # Checkpoint
-        if (current_tile.col, current_tile.row) in self.checkpoint_positions:
-            self.visited_checkpoints.add(
-                (current_tile.col, current_tile.row)
-            )
+        position = (current_tile.col, current_tile.row)
 
-            self.respawn_pixel = (
-                current_tile.col * TILE_SIZE + TILE_SIZE // 2,
-                current_tile.row * TILE_SIZE + TILE_SIZE // 2
-            )
-
-            self.respawn_angle = self.checkpoint_angles.get(
-                (current_tile.col, current_tile.row),
-                self.start_angle,
-            )
+        for checkpoint_id, line in enumerate(self.checkpoint_lines):
+            if position in line:
+                self.visited_checkpoints.add(checkpoint_id)
+                col, row = line[len(line) // 2]
+                self.respawn_pixel = (
+                    col * TILE_SIZE + TILE_SIZE // 2,
+                    row * TILE_SIZE + TILE_SIZE // 2,
+                )
+                self.respawn_angle = self.checkpoint_line_angles[checkpoint_id]
 
         # Boost
         if (current_tile.col, current_tile.row) in self.boost_positions:
@@ -108,15 +108,12 @@ class GameModel:
 
         # Ligne d'arrivée
         on_finish = (
-            (current_tile.col, current_tile.row)
-            == self.finish_position
+            (current_tile.col, current_tile.row) in self.finish_line
         )
 
         if on_finish and not self.was_on_finish:
 
-            if set(self.checkpoint_positions).issubset(
-                self.visited_checkpoints
-            ):
+            if len(self.visited_checkpoints) == len(self.checkpoint_lines):
                 self.completed_laps += 1
                 self.visited_checkpoints.clear()
 
