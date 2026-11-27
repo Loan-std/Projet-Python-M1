@@ -15,7 +15,8 @@ class GameModel:
     def __init__(self):
         self.state: str = GameState.MENU
         self.circuit: Circuit | None = None
-        self.car: FormulaCar | None = None
+        self.car_p1: FormulaCar | None = None
+        self.car_p2: Kart | None = None
         self.selected_circuit = 0
         self.available_circuits = ["Formule 1", "Hivernale"]
 
@@ -38,12 +39,15 @@ class GameModel:
         self.completed_laps = 0
         self.race_finished = False
         self.was_on_finish = False
-        self.spawn_car(template.START_POSITIONS[0])
+        self.spawn_car(template.START_POSITIONS[0], template.START_POSITIONS[1])
 
-    def spawn_car(self, start_position: tuple[int, int]) -> None:
-        col, row = start_position
-        self.car = Kart(col, row)
-        self.respawn_pixel = (self.car.x, self.car.y)
+    def spawn_car(self, start_position_p1: tuple[int, int], start_position_p2: tuple[int, int]) -> None:
+        col_p1, row_p1 = start_position_p1
+        col_p2, row_p2 = start_position_p2
+        self.car_p1 = FormulaCar(col_p1, row_p1)
+        self.car_p2 = Kart(col_p2, row_p2)
+        self.respawn_p1 = (self.car_p1.x, self.car_p1.y)
+        self.respawn_p2 = (self.car_p2.x, self.car_p2.y)
 
     def update(self) -> None:
         """Met à jour les objets du jeu."""
@@ -54,49 +58,67 @@ class GameModel:
         if self.race_finished:
             return
 
-        # Surface sous la voiture
-        current_tile = self.circuit.get_tile_at_pixel(
-            self.car.x,
-            self.car.y
-        )
+        for car, respawn_attr in ((self.car_p1, "respawn_p1"), (self.car_p2, "respawn_p2")):
 
-        if current_tile is not None:
-            self.car.update_surface(current_tile)
+            if car is None:
+                continue
 
-        # Déplacement de la voiture
-        self.car.update_position()
+            # Surface actuelle
+            current_tile = self.circuit.get_tile_at_pixel(
+                car.x,
+                car.y
+            )
 
-        # Nouvelle tuile après déplacement
-        current_tile = self.circuit.get_tile_at_pixel(
-            self.car.x,
-            self.car.y
-        )
+            if current_tile is not None:
+                car.update_surface(current_tile)
 
-        # Hors piste
-        if current_tile is None or isinstance(current_tile, VoidTile):
-            self.car.x, self.car.y = self.respawn_pixel
-            self.car.vx = 0.0
-            self.car.vy = 0.0
-            self.car.drifting = False
-            self.car.reset_steering()
+            # Déplacement
+            car.update_position()
+
+            # Nouvelle tuile après déplacement
+            current_tile = self.circuit.get_tile_at_pixel(
+                car.x,
+                car.y
+            )
+
+            # Hors piste
+            if current_tile is None or isinstance(current_tile, VoidTile):
+
+                respawn_x, respawn_y = getattr(self,respawn_attr)
+                car.x = respawn_x
+                car.y = respawn_y
+                car.vx = 0.0
+                car.vy = 0.0
+                car.drifting = False
+                car.reset_steering()
+
+                continue
+
+            # Checkpoint
+            if (current_tile.col, current_tile.row) in self.checkpoint_positions:
+
+                self.visited_checkpoints.add(
+                    (current_tile.col, current_tile.row)
+                )
+
+                setattr(self, respawn_attr,(current_tile.col * TILE_SIZE + TILE_SIZE // 2, current_tile.row * TILE_SIZE + TILE_SIZE // 2))
+
+            # Boost
+            if (current_tile.col, current_tile.row) in self.boost_positions:
+                car.accelerate()
+
+        # Gestion arrivée (joueur 1 uniquement pour l'instant)
+        if self.car_p1 is None:
             return
 
-        # Checkpoint
-        if (current_tile.col, current_tile.row) in self.checkpoint_positions:
-            self.visited_checkpoints.add(
-                (current_tile.col, current_tile.row)
-            )
+        current_tile = self.circuit.get_tile_at_pixel(
+            self.car_p1.x,
+            self.car_p1.y
+        )
 
-            self.respawn_pixel = (
-                current_tile.col * TILE_SIZE + TILE_SIZE // 2,
-                current_tile.row * TILE_SIZE + TILE_SIZE // 2
-            )
+        if current_tile is None:
+            return
 
-        # Boost
-        if (current_tile.col, current_tile.row) in self.boost_positions:
-            self.car.accelerate()
-
-        # Ligne d'arrivée
         on_finish = (
             (current_tile.col, current_tile.row)
             == self.finish_position
@@ -107,12 +129,18 @@ class GameModel:
             if set(self.checkpoint_positions).issubset(
                 self.visited_checkpoints
             ):
+
                 self.completed_laps += 1
                 self.visited_checkpoints.clear()
 
                 if self.completed_laps >= self.required_laps:
                     self.race_finished = True
-                    self.car.vx = 0.0
-                    self.car.vy = 0.0
+
+                    self.car_p1.vx = 0.0
+                    self.car_p1.vy = 0.0
+
+                    if self.car_p2:
+                        self.car_p2.vx = 0.0
+                        self.car_p2.vy = 0.0
 
         self.was_on_finish = on_finish

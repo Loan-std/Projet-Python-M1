@@ -90,9 +90,15 @@ class GameController:
         if self.model.race_finished:
             return
 
-        p1_input = self.input_handler.get_inputs()
-        car = self.model.car
-        self.apply_input(car, p1_input)
+        car_p1 = self.model.car_p1
+        car_p2 = self.model.car_p2
+
+        p1_input = self.input_handler.get_player1_inputs()
+        p2_input = self.input_handler.get_player2_inputs()
+
+        self.apply_input(car_p1, p1_input)
+        self.apply_input(car_p2, p2_input)
+
         self.model.update()
 
     def apply_input(self, car, player_input) -> None:

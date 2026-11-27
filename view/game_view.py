@@ -98,8 +98,13 @@ class GameView:
             )
 
         # Dessine la voiture
-        surf, rect = model.car.get_rotated_sprite()
-        self.screen.blit(surf, rect)
+        for car in (model.car_p1, model.car_p2):
+
+            if car is None:
+                continue
+
+            surf, rect = car.get_rotated_sprite()
+            self.screen.blit(surf, rect)
 
         # Affiche les points de passage par-dessus les terrains.
         for col, row in model.checkpoint_positions:
