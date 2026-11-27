@@ -29,6 +29,6 @@ python main.py
 
 ## Contributeurs et contributrices
 
-- Adda Yanis
+- Adda Yanis (Yanis-ADDA)
 - Arçon Maïwenn (Loan-std)
 - Ren Manyi (manyiren9-svg)
