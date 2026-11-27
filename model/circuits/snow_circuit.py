@@ -18,8 +18,10 @@ class SnowCircuit(CircuitTemplate):
     à la méthode create() héritée de CircuitTemplate.
     """
 
-    START_POSITIONS = ((7, 1), (8, 1))
+    START_POSITIONS = ((7, 2), (7, 4))
+    START_ANGLE = 90.0
     CHECKPOINT_POSITIONS = ((12, 16),)
+    CHECKPOINT_ANGLES = {(12, 16): 0.0}
     FINISH_POSITION = (7, 1)
     REQUIRED_LAPS = 3
     BOOST_POSITIONS = ((15, 1),)

@@ -31,6 +31,7 @@ class GameModel:
 
         self.circuit = Circuit(template.create())
         self.checkpoint_positions = getattr(template, "CHECKPOINT_POSITIONS", ())
+        self.checkpoint_angles = getattr(template, "CHECKPOINT_ANGLES", {})
         self.boost_positions = getattr(template, "BOOST_POSITIONS", ())
         self.visited_checkpoints: set[tuple[int, int]] = set()
         self.finish_position = getattr(template, "FINISH_POSITION", None)
@@ -38,12 +39,15 @@ class GameModel:
         self.completed_laps = 0
         self.race_finished = False
         self.was_on_finish = False
+        self.start_angle = getattr(template, "START_ANGLE", 0.0)
         self.spawn_car(template.START_POSITIONS[0])
 
     def spawn_car(self, start_position: tuple[int, int]) -> None:
         col, row = start_position
         self.car = Kart(col, row)
+        self.car.angle = self.start_angle
         self.respawn_pixel = (self.car.x, self.car.y)
+        self.respawn_angle = self.start_angle
 
     def update(self) -> None:
         """Met à jour les objets du jeu."""
@@ -75,6 +79,7 @@ class GameModel:
         # Hors piste
         if current_tile is None or isinstance(current_tile, VoidTile):
             self.car.x, self.car.y = self.respawn_pixel
+            self.car.angle = self.respawn_angle
             self.car.vx = 0.0
             self.car.vy = 0.0
             self.car.drifting = False
@@ -90,6 +95,11 @@ class GameModel:
             self.respawn_pixel = (
                 current_tile.col * TILE_SIZE + TILE_SIZE // 2,
                 current_tile.row * TILE_SIZE + TILE_SIZE // 2
+            )
+
+            self.respawn_angle = self.checkpoint_angles.get(
+                (current_tile.col, current_tile.row),
+                self.start_angle,
             )
 
         # Boost
